@@ -54,7 +54,7 @@ function openDoor(div, doorNumber, save = true, noAnimation = false) {
             div.style.backgroundColor = 'rgb(235, 118, 152)';
             break;
         case 2:
-            div.innerHTML = 'Ich kaufe dir diese bldsadasdauen Ohrringe';
+            div.innerHTML = 'Ich kaufe dir diese bldasasassadasdauen Ohrringe';
             div.style.fontSize = '15px';
             div.style.backgroundColor = 'rgb(248, 150, 30)';
             break;
