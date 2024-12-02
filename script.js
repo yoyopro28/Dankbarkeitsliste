@@ -95,19 +95,19 @@ function openDoor(div, doorNumber) {
 
 // Funktionen für jede Tür
 function door1(div) {
-    div.innerHTML = 'Ich koche einmal was für dich';
+    div.innerHTML = 'Ich mache dir einen Tee';
     div.style.fontSize = '15px';
     div.style.backgroundColor = 'rgb(235, 118, 152)';
 }
 
 function door2(div) {
-    div.innerHTML = 'Wir gehen auf den Weihnachtsmarkt';
+    div.innerHTML = 'Ich kaufe dir diese blauen Ohrringe';
     div.style.fontSize = '15px';
     div.style.backgroundColor = 'rgb(248, 150, 30)';
 }
 
 function door3(div) {
-    div.innerHTML = 'Ich mache dir einen Tee';
+    div.innerHTML = 'Ich koche einmal was für dich';
     div.style.fontSize = '15px';
     div.style.backgroundColor = 'rgb(133, 193, 233)';
 }
