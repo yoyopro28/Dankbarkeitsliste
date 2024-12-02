@@ -59,7 +59,7 @@ function openDoor(div, doorNumber, save = true, noAnimation = false) {
             div.style.backgroundColor = 'rgb(248, 150, 30)';
             break;
         case 3:
-            div.innerHTML = 'Ich koche einmal was für dich';
+            div.innerHTML = 'ich massiere dich';
             div.style.fontSize = '15px';
             div.style.backgroundColor = 'rgb(133, 193, 233)';
             break;
