@@ -18,15 +18,25 @@
       text-align: center;
     }
     .entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 10px;
       padding: 10px;
       background-color: #e0f7fa;
       border-radius: 5px;
     }
-    .entry span {
+    .entry-content {
+      flex-grow: 1;
+    }
+    .entry-content span {
       display: block;
       font-size: 0.9em;
       color: #555;
+    }
+    .buttons {
+      display: flex;
+      gap: 5px;
     }
     input, button {
       padding: 10px;
@@ -43,6 +53,20 @@
     }
     button:hover {
       background-color: #004d40;
+    }
+    .edit, .delete {
+      background-color: #00796b;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      padding: 5px 10px;
+    }
+    .edit:hover {
+      background-color: #ffa000;
+    }
+    .delete:hover {
+      background-color: #d32f2f;
     }
   </style>
 </head>
@@ -67,13 +91,19 @@
     function loadEntries() {
       const entries = JSON.parse(localStorage.getItem('entries')) || [];
       entryList.innerHTML = '';
-      entries.forEach(entry => {
+      entries.forEach((entry, index) => {
         const entryDiv = document.createElement('div');
         entryDiv.classList.add('entry');
         entryDiv.innerHTML = `
-          <strong>${entry.name}</strong>
-          <span>${entry.date}</span>
-          <p>${entry.text}</p>
+          <div class="entry-content">
+            <strong>${entry.name}</strong>
+            <span>${entry.date}</span>
+            <p>${entry.text}</p>
+          </div>
+          <div class="buttons">
+            <button class="edit" onclick="editEntry(${index})">🛠</button>
+            <button class="delete" onclick="deleteEntry(${index})">🗑</button>
+          </div>
         `;
         entryList.prepend(entryDiv);
       });
@@ -99,6 +129,28 @@
         loadEntries();
       }
     });
+
+    // Eintrag löschen
+    function deleteEntry(index) {
+      const entries = JSON.parse(localStorage.getItem('entries')) || [];
+      entries.splice(index, 1);
+      localStorage.setItem('entries', JSON.stringify(entries));
+      loadEntries();
+    }
+
+    // Eintrag bearbeiten
+    function editEntry(index) {
+      const entries = JSON.parse(localStorage.getItem('entries')) || [];
+      const entry = entries[index];
+      const newName = prompt("Name bearbeiten:", entry.name);
+      const newText = prompt("Eintrag bearbeiten:", entry.text);
+
+      if (newName !== null && newText !== null) {
+        entries[index] = { ...entry, name: newName, text: newText };
+        localStorage.setItem('entries', JSON.stringify(entries));
+        loadEntries();
+      }
+    }
 
     // Initiale Einträge laden
     loadEntries();
