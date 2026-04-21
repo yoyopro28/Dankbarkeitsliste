@@ -14,9 +14,11 @@
       border-radius: 10px;
       background-color: #f9f9f9;
     }
+
     h1 {
       text-align: center;
     }
+
     .entry {
       display: flex;
       justify-content: space-between;
@@ -25,25 +27,39 @@
       padding: 10px;
       background-color: #e0f7fa;
       border-radius: 5px;
+      gap: 10px;
     }
+
     .entry-content {
       flex-grow: 1;
+      word-break: break-word;
     }
+
     .entry-content span {
       display: block;
       font-size: 0.9em;
       color: #555;
+      margin-top: 3px;
     }
+
+    .entry-content p {
+      margin: 8px 0 0 0;
+    }
+
     .buttons {
       display: flex;
       gap: 5px;
+      flex-shrink: 0;
     }
-    input, button {
+
+    input,
+    button {
       padding: 10px;
       margin: 5px 0;
       width: 100%;
       box-sizing: border-box;
     }
+
     button {
       background-color: #00796b;
       color: white;
@@ -51,109 +67,183 @@
       cursor: pointer;
       border-radius: 5px;
     }
+
     button:hover {
       background-color: #004d40;
     }
-    .edit, .delete {
-      background-color: #00796b;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 5px;
+
+    .edit,
+    .delete {
+      width: auto;
       padding: 5px 10px;
     }
+
     .edit:hover {
       background-color: #ffa000;
     }
+
     .delete:hover {
       background-color: #d32f2f;
+    }
+
+    .empty {
+      text-align: center;
+      color: #666;
+      padding: 15px;
     }
   </style>
 </head>
 <body>
   <h1>Einkaufsliste</h1>
-  <div id="entryList"></div>
+
+  <div id="entryList">
+    <div class="empty">Noch keine Einträge vorhanden.</div>
+  </div>
+
   <form id="gratitudeForm">
     <label for="name">Dein Name:</label>
     <input type="text" id="name" placeholder="Dein Name" required>
+
     <label for="gratitude">Was brauchen wir?</label>
     <input type="text" id="gratitude" placeholder="Was brauchen wir?" required>
+
     <button type="submit">Hinzufügen</button>
   </form>
 
-  <script>
-    const entryList = document.getElementById('entryList');
-    const gratitudeForm = document.getElementById('gratitudeForm');
-    const nameInput = document.getElementById('name');
-    const gratitudeInput = document.getElementById('gratitude');
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      push,
+      onValue,
+      remove,
+      update
+    } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
 
-    // Lade gespeicherte Einträge
-    function loadEntries() {
-      const entries = JSON.parse(localStorage.getItem('entries')) || [];
-      entryList.innerHTML = '';
-      entries.forEach((entry, index) => {
-        const entryDiv = document.createElement('div');
-        entryDiv.classList.add('entry');
+    const firebaseConfig = {
+      apiKey: "AIzaSyDWzDVcfiMG64EQxxSrHu1ORp0zwDbUYdQ",
+      authDomain: "einkaufsliste-1c079.firebaseapp.com",
+      databaseURL: "https://einkaufsliste-1c079-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "einkaufsliste-1c079",
+      storageBucket: "einkaufsliste-1c079.firebasestorage.app",
+      messagingSenderId: "23304432903",
+      appId: "1:23304432903:web:4f9ab844cc034b94b169a2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const entriesRef = ref(db, "entries");
+
+    const entryList = document.getElementById("entryList");
+    const gratitudeForm = document.getElementById("gratitudeForm");
+    const nameInput = document.getElementById("name");
+    const gratitudeInput = document.getElementById("gratitude");
+
+    function renderEntries(data) {
+      entryList.innerHTML = "";
+
+      if (!data) {
+        entryList.innerHTML = '<div class="empty">Noch keine Einträge vorhanden.</div>';
+        return;
+      }
+
+      const entriesArray = Object.entries(data).reverse();
+
+      entriesArray.forEach(([id, entry]) => {
+        const entryDiv = document.createElement("div");
+        entryDiv.classList.add("entry");
+
         entryDiv.innerHTML = `
           <div class="entry-content">
-            <strong>${entry.name}</strong>
-            <span>${entry.date}</span>
-            <p>${entry.text}</p>
+            <strong>${escapeHtml(entry.name)}</strong>
+            <span>${escapeHtml(entry.date)}</span>
+            <p>${escapeHtml(entry.text)}</p>
           </div>
           <div class="buttons">
-            <button class="edit" onclick="editEntry(${index})">🛠</button>
-            <button class="delete" onclick="deleteEntry(${index})">🗑</button>
+            <button type="button" class="edit">🛠</button>
+            <button type="button" class="delete">🗑</button>
           </div>
         `;
-        entryList.prepend(entryDiv);
+
+        entryDiv.querySelector(".delete").addEventListener("click", () => {
+          deleteEntry(id);
+        });
+
+        entryDiv.querySelector(".edit").addEventListener("click", () => {
+          editEntry(id, entry);
+        });
+
+        entryList.appendChild(entryDiv);
       });
     }
 
-    // Eintrag hinzufügen
-    gratitudeForm.addEventListener('submit', event => {
-      event.preventDefault();
-      const name = nameInput.value.trim();
-      const gratitude = gratitudeInput.value.trim();
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text ?? "";
+      return div.innerHTML;
+    }
 
-      if (name && gratitude) {
-        const entries = JSON.parse(localStorage.getItem('entries')) || [];
-        const newEntry = {
-          name: name,
-          text: gratitude,
-          date: new Date().toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
-        };
-        entries.push(newEntry);
-        localStorage.setItem('entries', JSON.stringify(entries));
-        nameInput.value = '';
-        gratitudeInput.value = '';
-        loadEntries();
+    onValue(entriesRef, (snapshot) => {
+      renderEntries(snapshot.val());
+    });
+
+    gratitudeForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const name = nameInput.value.trim();
+      const text = gratitudeInput.value.trim();
+
+      if (!name || !text) return;
+
+      try {
+        await push(entriesRef, {
+          name,
+          text,
+          date: new Date().toLocaleString("de-DE", {
+            dateStyle: "short",
+            timeStyle: "short"
+          })
+        });
+
+        gratitudeForm.reset();
+      } catch (error) {
+        alert("Fehler beim Speichern: " + error.message);
       }
     });
 
-    // Eintrag löschen
-    function deleteEntry(index) {
-      const entries = JSON.parse(localStorage.getItem('entries')) || [];
-      entries.splice(index, 1);
-      localStorage.setItem('entries', JSON.stringify(entries));
-      loadEntries();
-    }
-
-    // Eintrag bearbeiten
-    function editEntry(index) {
-      const entries = JSON.parse(localStorage.getItem('entries')) || [];
-      const entry = entries[index];
-      const newName = prompt("Name bearbeiten:", entry.name);
-      const newText = prompt("Eintrag bearbeiten:", entry.text);
-
-      if (newName !== null && newText !== null) {
-        entries[index] = { ...entry, name: newName, text: newText };
-        localStorage.setItem('entries', JSON.stringify(entries));
-        loadEntries();
+    async function deleteEntry(id) {
+      try {
+        await remove(ref(db, `entries/${id}`));
+      } catch (error) {
+        alert("Fehler beim Löschen: " + error.message);
       }
     }
 
-    // Initiale Einträge laden
-    loadEntries();
+    async function editEntry(id, entry) {
+      const newName = prompt("Name bearbeiten:", entry.name);
+      if (newName === null) return;
+
+      const newText = prompt("Eintrag bearbeiten:", entry.text);
+      if (newText === null) return;
+
+      const cleanName = newName.trim();
+      const cleanText = newText.trim();
+
+      if (!cleanName || !cleanText) {
+        alert("Name und Eintrag dürfen nicht leer sein.");
+        return;
+      }
+
+      try {
+        await update(ref(db, `entries/${id}`), {
+          name: cleanName,
+          text: cleanText
+        });
+      } catch (error) {
+        alert("Fehler beim Bearbeiten: " + error.message);
+      }
+    }
   </script>
 </body>
-</html>
+</html>    
