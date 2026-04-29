@@ -161,6 +161,7 @@
     const loginNotice = document.getElementById("loginNotice");
 
     let currentUser = null;
+    let unsubscribeEntries = null;
 
     // Hier deine erlaubten Google-E-Mail-Adressen eintragen
     const allowedEmails = [
@@ -200,11 +201,14 @@
         userInfo.textContent = user.displayName || user.email || "Angemeldet";
         nameInput.value = user.displayName || "";
 
+        startEntriesListener();
+
         return;
       }
 
       if (user && !isAllowedUser(user)) {
         currentUser = null;
+        stopEntriesListener();
 
         loginButton.classList.remove("hidden");
         logoutButton.classList.add("hidden");
@@ -221,6 +225,7 @@
       }
 
       currentUser = null;
+      stopEntriesListener();
 
       loginButton.classList.remove("hidden");
       logoutButton.classList.add("hidden");
@@ -230,6 +235,35 @@
       userInfo.textContent = "Nicht angemeldet";
       nameInput.value = "";
     });
+
+    function startEntriesListener() {
+      if (unsubscribeEntries) return;
+
+      unsubscribeEntries = onValue(
+        entriesRef,
+        (snapshot) => {
+          renderEntries(snapshot.val());
+        },
+        (error) => {
+          console.error("Fehler beim Laden der Einträge:", error);
+
+          entryList.innerHTML = `
+            <div class="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-8 text-center text-sm text-rose-200">
+              Fehler beim Laden der Einträge: ${escapeHtml(error.message)}
+            </div>
+          `;
+        }
+      );
+    }
+
+    function stopEntriesListener() {
+      if (unsubscribeEntries) {
+        unsubscribeEntries();
+        unsubscribeEntries = null;
+      }
+
+      renderEntries(null);
+    }
 
     function renderEntries(data) {
       entryList.innerHTML = "";
@@ -306,10 +340,6 @@
       div.textContent = text ?? "";
       return div.innerHTML;
     }
-
-    onValue(entriesRef, (snapshot) => {
-      renderEntries(snapshot.val());
-    });
 
     gratitudeForm.addEventListener("submit", async (event) => {
       event.preventDefault();
