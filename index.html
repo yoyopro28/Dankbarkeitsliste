@@ -148,7 +148,6 @@
     let currentUser = null;
     let unsubscribeEntries = null;
 
-    // Hier deine erlaubten Google-E-Mail-Adressen eintragen
     const allowedEmails = [
       "joe.martens28@gmail.com",
       "elena.kohlhaas51@gmail.com"
@@ -156,6 +155,15 @@
 
     function isAllowedUser(user) {
       return user && allowedEmails.includes(user.email);
+    }
+
+    function getDisplayName(user) {
+      const namesByEmail = {
+        "joe.martens28@gmail.com": "Joe",
+        "elena.kohlhaas51@gmail.com": "Elena"
+      };
+
+      return namesByEmail[user.email] || user.displayName || user.email || "Unbekannt";
     }
 
     loginButton.addEventListener("click", async () => {
@@ -183,7 +191,7 @@
         gratitudeForm.classList.remove("hidden");
         loginNotice.classList.add("hidden");
 
-        userInfo.textContent = user.displayName || user.email || "Angemeldet";
+        userInfo.textContent = getDisplayName(user);
 
         startEntriesListener();
 
@@ -333,7 +341,7 @@
         return;
       }
 
-      const name = currentUser.displayName || currentUser.email || "Unbekannt";
+      const name = getDisplayName(currentUser);
       const text = gratitudeInput.value.trim();
 
       if (!text) return;
